@@ -1,17 +1,21 @@
 const express = require("express");
 const { ObjectId } = require("mongodb");
-
 const router = express.Router();
 
-// GET all reviews or user-specific
+// GET all reviews or by userEmail
 router.get("/", async (req, res) => {
   try {
     const db = req.app.locals.db;
     const { userEmail } = req.query;
     const filter = userEmail ? { userEmail } : {};
-    const reviews = await db.collection("FoodLovers").find(filter).sort({ createdAt: -1 }).toArray();
+    const reviews = await db
+      .collection("FoodLovers")
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .toArray();
     res.json(reviews);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Failed to fetch reviews" });
   }
 });
@@ -24,6 +28,7 @@ router.post("/", async (req, res) => {
     const result = await db.collection("FoodLovers").insertOne(review);
     res.status(201).json({ ...review, _id: result.insertedId });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Failed to add review" });
   }
 });
@@ -37,6 +42,7 @@ router.delete("/:id", async (req, res) => {
     if (result.deletedCount === 0) return res.status(404).json({ message: "Review not found" });
     res.json({ message: "Review deleted" });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Failed to delete review" });
   }
 });
@@ -53,6 +59,7 @@ router.put("/:id", async (req, res) => {
     );
     res.json(updated.value);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Failed to update review" });
   }
 });
