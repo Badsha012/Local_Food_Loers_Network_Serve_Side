@@ -6,7 +6,6 @@ const router = express.Router();
 /**
  * 🟢 Add a review to favorites
  * Endpoint: POST /favorites
- * Body: { userEmail, reviewId, reviewTitle, reviewImage, rating }
  */
 router.post("/", async (req, res) => {
   try {
@@ -14,40 +13,33 @@ router.post("/", async (req, res) => {
     const favoritesCollection = db.collection("favorites");
     const favorite = req.body;
 
-    // ✅ Validation
     if (!favorite.userEmail || !favorite.reviewId) {
-      return res.status(400).send({ message: "Missing required fields" });
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // ✅ Check if already exists
     const exists = await favoritesCollection.findOne({
-      reviewId: favorite.reviewId,
       userEmail: favorite.userEmail,
+      reviewId: favorite.reviewId,
     });
 
     if (exists) {
-      return res.status(400).send({ message: "Already in favorites" });
+      return res.status(400).json({ message: "Already in favorites" });
     }
 
-    // ✅ Insert new favorite
     const result = await favoritesCollection.insertOne({
       ...favorite,
       createdAt: new Date(),
     });
 
-    res.status(201).send({
-      success: true,
-      message: "Added to favorites",
-      insertedId: result.insertedId,
-    });
-  } catch (err) {
-    console.error("❌ Error adding favorite:", err);
-    res.status(500).send({ message: "Failed to add favorite" });
+    res.status(201).json({ message: "Added to favorites", id: result.insertedId });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to add favorite" });
   }
 });
 
 /**
- * 🟡 Get all favorites of a user
+ * 🟡 Get all favorites for a user
  * Endpoint: GET /favorites?userEmail=someone@gmail.com
  */
 router.get("/", async (req, res) => {
@@ -56,23 +48,18 @@ router.get("/", async (req, res) => {
     const email = req.query.userEmail;
 
     if (!email) {
-      return res.status(400).send({ message: "userEmail query required" });
+      return res.status(400).json({ message: "userEmail required" });
     }
 
-    const favorites = await db
-      .collection("favorites")
-      .find({ userEmail: email })
-      .toArray();
-
-    res.send(favorites);
-  } catch (err) {
-    console.error("❌ Error fetching favorites:", err);
-    res.status(500).send({ message: "Failed to fetch favorites" });
+    const favorites = await db.collection("favorites").find({ userEmail: email }).toArray();
+    res.json(favorites);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch favorites" });
   }
 });
 
 /**
- * 🔴 Delete a favorite by its _id
+ * 🔴 Delete a favorite by _id
  * Endpoint: DELETE /favorites/:id
  */
 router.delete("/:id", async (req, res) => {
@@ -80,22 +67,15 @@ router.delete("/:id", async (req, res) => {
     const db = req.app.locals.db;
     const id = req.params.id;
 
-    if (!ObjectId.isValid(id)) {
-      return res.status(400).send({ message: "Invalid ID" });
-    }
-
-    const result = await db
-      .collection("favorites")
-      .deleteOne({ _id: new ObjectId(id) });
+    const result = await db.collection("favorites").deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 0) {
-      return res.status(404).send({ message: "Favorite not found" });
+      return res.status(404).json({ message: "Favorite not found" });
     }
 
-    res.send({ success: true, message: "Favorite removed" });
-  } catch (err) {
-    console.error("❌ Error deleting favorite:", err);
-    res.status(500).send({ message: "Failed to delete favorite" });
+    res.json({ message: "Favorite removed" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete favorite" });
   }
 });
 

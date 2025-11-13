@@ -1,57 +1,62 @@
-const express = require('express')
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const cors=require('cors')
-const app = express()
-const port = 3000
+const express = require("express");
+const { MongoClient, ServerApiVersion } = require("mongodb");
+const cors = require("cors");
 
+const app = express();
+const port = 3000;
 
-app.use(cors())
-app.use(express.json())
+app.use(cors());
+app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('Server is Running Found !')
-})
+// Root test
+app.get("/", (req, res) => {
+  res.send("🍔 Server is Running Successfully!");
+});
 
+// Mongo URI
+const uri =
+  "mongodb+srv://FoodLover-db:UNbqlMyjK1p4Fq5u@cluster0.cyspe14.mongodb.net/?retryWrites=true&w=majority";
 
-
-const uri = "mongodb+srv://FoodLover-db:UNbqlMyjK1p4Fq5u@cluster0.cyspe14.mongodb.net/?appName=Cluster0";
-
-
+// Mongo client
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 
+// Routes import
+const favoritesRoutes = require("./routes/favoritesRoutes");
+
+// Run
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    const db = client.db('FoodLover-db');
-    const modelcollection = db.collection('FoodLovers')
+    const db = client.db("FoodLover-db");
+    app.locals.db = db;
 
-       app.get('/FoodLovers', async (req, res) =>{
+    const modelCollection = db.collection("FoodLovers");
 
-    const result = await modelcollection.find().toArray();
-     res.send(result);
-   })
-   const favoritesRoutes=require("./routes/favoritesRoutes");
+    // Example route
+    app.get("/FoodLovers", async (req, res) => {
+      const result = await modelCollection.find().toArray();
+      res.send(result);
+    });
 
+    // ✅ Mount Favorites Route
+    app.use("/favorites", favoritesRoutes);
 
-
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-   
-    
+    await db.command({ ping: 1 });
+    console.log("✅ MongoDB connected successfully!");
+  } catch (err) {
+    console.error("❌ MongoDB connection error:", err);
   }
 }
-run().catch(console.dir);
 
-
-app.listen(port, () => {
-  console.log(`Server is listening on port ${port}`)
-})
+// Run DB connection but start server anyway
+run().finally(() => {
+  app.listen(port, () => {
+    console.log(`🚀 Server running at http://localhost:${port}`);
+  });
+});
