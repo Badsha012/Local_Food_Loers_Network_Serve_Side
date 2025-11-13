@@ -37,6 +37,8 @@ async function run() {
     const result = await modelcollection.find().toArray();
      res.send(result);
    })
+   const favoritesRoutes=require("./routes/favoritesRoutes");
+
 
 
     // Send a ping to confirm a successful connection
